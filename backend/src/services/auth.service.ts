@@ -11,7 +11,7 @@ export const authService = {
 
     const hashed = await bcrypt.hash(data.password, 10);
 
-    const user = await userRepo.create({
+    const user = await userRepo.createUser({
       ...data,
       password: hashed,
     });

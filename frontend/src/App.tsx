@@ -9,7 +9,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState<"login" | "register">("login");
 
-  // 🔥 CHECK AUTH ON LOAD
+  // ✅ CHECK AUTH ON LOAD
   useEffect(() => {
     api
       .get("/auth/me")
@@ -46,9 +46,9 @@ export default function App() {
       </div>
 
       {page === "register" ? (
-        <Register onSuccess={() => window.location.reload()} />
+        <Register onSuccess={(userData) => setUser(userData)} />
       ) : (
-        <Login onSuccess={() => window.location.reload()} />
+        <Login onSuccess={(userData) => setUser(userData)} />
       )}
     </div>
   );

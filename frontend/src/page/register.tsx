@@ -3,10 +3,11 @@ import axios from "axios";
 import { motion } from "framer-motion";
 
 type Props = {
-  onSuccess?: () => void;
+  onSuccess?: (user: any) => void;
+  onLoginClick?: () => void;
 };
 
-export default function Register({ onSuccess }: Props) {
+export default function Register({ onSuccess, onLoginClick }: Props) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,18 +27,23 @@ export default function Register({ onSuccess }: Props) {
     setLoading(true);
 
     try {
+      // 1️⃣ Register user
       await axios.post(
         "http://localhost:4000/api/auth/register",
         { name, email, password },
         { withCredentials: true }
       );
 
+      // 2️⃣ Fetch logged-in user
+      const meRes = await axios.get(
+        "http://localhost:4000/api/auth/me",
+        { withCredentials: true }
+      );
+
       setMsg("Registration successful");
 
-      // ✅ IMPORTANT: force app to re-check /me
-      setTimeout(() => {
-        onSuccess?.();
-      }, 300);
+      // 3️⃣ Tell App user is logged in
+      onSuccess?.(meRes.data);
     } catch (err: any) {
       setMsg(
         err?.response?.data?.message ||
@@ -64,60 +70,46 @@ export default function Register({ onSuccess }: Props) {
         </p>
 
         <form onSubmit={submit} className="space-y-5">
-          <div>
-            <label className="text-sm text-gray-700">Name</label>
-            <input
-              type="text"
-              placeholder="Your Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="w-full mt-1 h-11 px-4 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
-            />
-          </div>
+          <input
+            type="text"
+            placeholder="Your Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            className="w-full h-11 px-4 border rounded-xl"
+          />
 
-          <div>
-            <label className="text-sm text-gray-700">Email</label>
-            <input
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full mt-1 h-11 px-4 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
-            />
-          </div>
+          <input
+            type="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="w-full h-11 px-4 border rounded-xl"
+          />
 
-          <div>
-            <label className="text-sm text-gray-700">Password</label>
-            <input
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full mt-1 h-11 px-4 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
-            />
-          </div>
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="w-full h-11 px-4 border rounded-xl"
+          />
 
-          <div>
-            <label className="text-sm text-gray-700">
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              placeholder="••••••••"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              className="w-full mt-1 h-11 px-4 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
-            />
-          </div>
+          <input
+            type="password"
+            placeholder="Confirm Password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            className="w-full h-11 px-4 border rounded-xl"
+          />
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-11 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition disabled:opacity-60"
+            className="w-full h-11 bg-indigo-600 text-white rounded-xl"
           >
             {loading ? "Registering..." : "Register"}
           </button>
@@ -125,7 +117,7 @@ export default function Register({ onSuccess }: Props) {
 
         {msg && (
           <p
-            className={`mt-4 text-center text-sm font-medium ${
+            className={`mt-4 text-center text-sm ${
               msg.includes("successful")
                 ? "text-green-600"
                 : "text-red-600"
@@ -137,7 +129,10 @@ export default function Register({ onSuccess }: Props) {
 
         <p className="mt-6 text-center text-sm text-gray-600">
           Already have an account?{" "}
-          <span className="text-indigo-600 font-semibold cursor-pointer">
+          <span
+            onClick={onLoginClick}
+            className="text-indigo-600 font-semibold cursor-pointer hover:underline"
+          >
             Login
           </span>
         </p>

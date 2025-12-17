@@ -3,7 +3,7 @@ import axios from "axios";
 import { motion } from "framer-motion";
 
 type Props = {
-  onSuccess?: () => void;
+  onSuccess?: (user: any) => void;
 };
 
 export default function Login({ onSuccess }: Props) {
@@ -18,18 +18,24 @@ export default function Login({ onSuccess }: Props) {
     setLoading(true);
 
     try {
+      // 1️⃣ Login
       await axios.post(
         "http://localhost:4000/api/auth/login",
         { email, password },
         { withCredentials: true }
       );
 
+      // 2️⃣ Fetch logged-in user
+      const meRes = await axios.get(
+        "http://localhost:4000/api/auth/me",
+        { withCredentials: true }
+      );
+
       setMsg("Login successful");
 
-      // ✅ notify App to re-check /me
-      setTimeout(() => {
-        onSuccess?.();
-      }, 300);
+      // 3️⃣ Tell App: user is logged in
+      onSuccess?.(meRes.data);
+
     } catch (err) {
       setMsg("Login failed. Please check credentials.");
     } finally {
@@ -48,62 +54,36 @@ export default function Login({ onSuccess }: Props) {
         <h2 className="text-3xl font-bold text-center text-gray-800 mb-2">
           Welcome Back
         </h2>
-        <p className="text-center text-gray-500 mb-6">
-          Login to continue
-        </p>
 
         <form onSubmit={submit} className="space-y-5">
-          <div>
-            <label className="text-sm text-gray-700">Email</label>
-            <input
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full mt-1 h-11 px-4 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
-            />
-          </div>
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="w-full h-11 px-4 border rounded-xl"
+          />
 
-          <div>
-            <label className="text-sm text-gray-700">Password</label>
-            <input
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full mt-1 h-11 px-4 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
-            />
-          </div>
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="w-full h-11 px-4 border rounded-xl"
+          />
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-11 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition disabled:opacity-60"
+            className="w-full h-11 bg-indigo-600 text-white rounded-xl"
           >
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
-        {msg && (
-          <p
-            className={`mt-4 text-center text-sm font-medium ${
-              msg.includes("successful")
-                ? "text-green-600"
-                : "text-red-600"
-            }`}
-          >
-            {msg}
-          </p>
-        )}
-
-        <p className="mt-6 text-center text-sm text-gray-600">
-          Don’t have an account?{" "}
-          <span className="text-indigo-600 font-semibold cursor-pointer">
-            Register
-          </span>
-        </p>
+        {msg && <p className="mt-4 text-center">{msg}</p>}
       </motion.div>
     </div>
   );

@@ -27,3 +27,13 @@ export const getAssignedTasks = async (req: any, res: Response) => {
   const tasks = await taskService.getTasksAssignedToUser(req.user.id);
   res.json(tasks);
 };
+
+export const deleteTask = async (req: any, res: Response) => {
+  try {
+    await taskService.deleteTask(req.params.id, req.user.id);
+    res.json({ message: "Task deleted successfully" });
+  } catch (err: any) {
+    res.status(403).json({ message: err.message });
+  }
+};
+
