@@ -1,15 +1,21 @@
-import { prisma } from "../prisma";
+import { prisma } from "../config/prisma";
 
 export const userRepo = {
-  create: (data: any) =>
-    prisma.user.create({ data }),
+  findByEmail: (email: string) => {
+    return prisma.user.findUnique({
+      where: { email },
+    });
+  },
 
-  findByEmail: (email: string) =>
-    prisma.user.findUnique({ where: { email } }),
+  findById: (id: string) => {
+    return prisma.user.findUnique({
+      where: { id },
+    });
+  },
 
-  findById: (id: string) =>
-    prisma.user.findUnique({ where: { id } }),
-
-  update: (id: string, data: any) =>
-    prisma.user.update({ where: { id }, data }),
+  createUser: (data: { email: string; password: string; name: string }) => {
+    return prisma.user.create({
+      data,
+    });
+  },
 };

@@ -1,28 +1,38 @@
-import { taskRepo } from "../repositories/task.repo";
-import { io } from "../socket";
+import { prisma } from "../config/prisma";
 
 export const taskService = {
-  createTask: async (payload: any, creatorId: string) => {
-    const task = await taskRepo.create({
-      ...payload,
-      creatorId,
-      status: "TODO",
-      dueDate: new Date(payload.dueDate),
+  createTask: (payload: any, creatorId: string) => {
+    return prisma.task.create({
+      data: {
+        title: payload.title,
+        description: payload.description,
+        dueDate: payload.dueDate,
+        priority: payload.priority,
+        status: payload.status,
+        creatorId,
+        assignedToId: payload.assignedToId,
+      },
     });
-
-    io.emit("task:created", task);
-    return task;
   },
 
-  updateTask: async (id: string, payload: any) => {
-    const task = await taskRepo.update(id, payload);
+  updateTask: (taskId: string, payload: any) => {
+    return prisma.task.update({
+      where: { id: taskId },
+      data: payload,
+    });
+  },
 
-    io.emit("task:updated", task);
+  getTasksCreatedByUser: (userId: string) => {
+    return prisma.task.findMany({
+      where: { creatorId: userId },
+      orderBy: { createdAt: "desc" },
+    });
+  },
 
-    if (payload.assignedToId) {
-      io.to(payload.assignedToId).emit("task:assigned", task);
-    }
-
-    return task;
+  getTasksAssignedToUser: (userId: string) => {
+    return prisma.task.findMany({
+      where: { assignedToId: userId },
+      orderBy: { createdAt: "desc" },
+    });
   },
 };

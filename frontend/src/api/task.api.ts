@@ -1,10 +1,11 @@
 import { api } from "./axios";
 
-export const fetchTasks = () =>
-  api.get("/tasks");
+const taskApi = {
+  getCreatedTasks: () => api.get("/tasks/created"),
+  getAssignedTasks: () => api.get("/tasks/assigned"),
+  createTask: (data: any) => api.post("/tasks", data),
+  updateTask: (id: string, data: any) =>
+    api.put(`/tasks/${id}`, data),
+};
 
-export const createTask = (data: any) =>
-  api.post("/tasks", data);
-
-export const updateTask = ({ id, data }: any) =>
-  api.put(`/tasks/${id}`, data);
+export default taskApi;

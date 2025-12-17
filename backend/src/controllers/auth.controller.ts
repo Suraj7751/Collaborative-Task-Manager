@@ -8,8 +8,8 @@ export const register = async (req: Request, res: Response) => {
 
   res.cookie("token", token, {
     httpOnly: true,
-    secure: true,
-    sameSite: "none",
+    secure: false,     // ✅ localhost
+    sameSite: "lax",   // ✅ localhost
   });
 
   res.status(201).json(user);
@@ -21,8 +21,8 @@ export const login = async (req: Request, res: Response) => {
 
   res.cookie("token", token, {
     httpOnly: true,
-    secure: true,
-    sameSite: "none",
+    secure: false,     // ✅ localhost
+    sameSite: "lax",   // ✅ localhost
   });
 
   res.json(user);
