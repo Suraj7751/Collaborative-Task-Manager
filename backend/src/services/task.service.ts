@@ -1,10 +1,12 @@
 import { prisma } from "../config/prisma";
 import { getIO } from "../socket";
 
+/* =====================
+   TASK SERVICE
+===================== */
+
 export const taskService = {
-  /* =====================
-     CREATE TASK
-  ===================== */
+  // CREATE
   createTask: async (payload: any, creatorId: string) => {
     const task = await prisma.task.create({
       data: {
@@ -18,76 +20,59 @@ export const taskService = {
       },
     });
 
-    // 🔴 REAL-TIME EVENT
     getIO().emit("task:created", task);
-
     return task;
   },
 
-  /* =====================
-     UPDATE TASK
-  ===================== */
-  updateTask: async (taskId: string, payload: any) => {
-    const task = await prisma.task.update({
+  // UPDATE
+  updateTask: async (taskId: string, payload: any, user: any) => {
+    const task = await prisma.task.findUnique({ where: { id: taskId } });
+
+    if (!task) throw new Error("Task not found");
+
+    if (
+      task.creatorId !== user.id &&
+      task.assignedToId !== user.id &&
+      user.role !== "ADMIN"
+    ) {
+      throw new Error("Not authorized");
+    }
+
+    const updated = await prisma.task.update({
       where: { id: taskId },
-      data: {
-        ...(payload.status && { status: payload.status }),
-        ...(payload.priority && { priority: payload.priority }),
-        ...(payload.assignedToId && {
-          assignedToId: payload.assignedToId,
-        }),
-      },
+      data: payload,
     });
 
-    // 🔴 REAL-TIME EVENT
-    getIO().emit("task:updated", task);
-
-    return task;
+    getIO().emit("task:updated", updated);
+    return updated;
   },
 
-  /* =====================
-     DELETE TASK (SECURE)
-  ===================== */
-  deleteTask: async (taskId: string, userId: string) => {
-    const task = await prisma.task.findUnique({
-      where: { id: taskId },
-    });
+  // DELETE (CREATOR OR ADMIN ONLY)
+  deleteTask: async (taskId: string, user: any) => {
+    const task = await prisma.task.findUnique({ where: { id: taskId } });
 
-    if (!task) {
-      throw new Error("Task not found");
+    if (!task) throw new Error("Task not found");
+
+    if (task.creatorId !== user.id && user.role !== "ADMIN") {
+      throw new Error("Not allowed");
     }
 
-    if (task.creatorId !== userId) {
-      throw new Error("You are not allowed to delete this task");
-    }
+    await prisma.task.delete({ where: { id: taskId } });
 
-    await prisma.task.delete({
-      where: { id: taskId },
-    });
-
-    // 🔴 REAL-TIME EVENT
     getIO().emit("task:deleted", taskId);
-
-    return { success: true };
   },
 
-  /* =====================
-     TASKS CREATED BY USER
-  ===================== */
-  getTasksCreatedByUser: async (userId: string) => {
-    return prisma.task.findMany({
+  // CREATED BY USER
+  getCreatedTasks: (userId: string) =>
+    prisma.task.findMany({
       where: { creatorId: userId },
       orderBy: { createdAt: "desc" },
-    });
-  },
+    }),
 
-  /* =====================
-     TASKS ASSIGNED TO USER
-  ===================== */
-  getTasksAssignedToUser: async (userId: string) => {
-    return prisma.task.findMany({
+  // ASSIGNED TO USER
+  getAssignedTasks: (userId: string) =>
+    prisma.task.findMany({
       where: { assignedToId: userId },
       orderBy: { createdAt: "desc" },
-    });
-  },
+    }),
 };

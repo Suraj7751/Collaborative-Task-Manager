@@ -1,9 +1,10 @@
 import { Server } from "socket.io";
+import http from "http";
 
-let io: Server | null = null;
+let io: Server;
 
-export const initSocket = (httpServer: any) => {
-  io = new Server(httpServer, {
+export const initSocket = (server: http.Server) => {
+  io = new Server(server, {
     cors: {
       origin: "http://localhost:5173",
       credentials: true,
@@ -17,8 +18,6 @@ export const initSocket = (httpServer: any) => {
       console.log("❌ Client disconnected:", socket.id);
     });
   });
-
-  return io;
 };
 
 export const getIO = () => {

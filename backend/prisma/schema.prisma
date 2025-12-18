@@ -7,6 +7,14 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// =====================
+// ENUMS
+// =====================
+
+enum Role {
+  ADMIN
+  MEMBER
+}
 
 enum Priority {
   LOW
@@ -22,16 +30,25 @@ enum Status {
   COMPLETED
 }
 
-model User {
-  id            String   @id @default(uuid())
-  name          String
-  email         String   @unique
-  password      String
-  createdAt     DateTime @default(now())
+// =====================
+// USER MODEL
+// =====================
 
-  createdTasks  Task[]   @relation("createdTasks")
-  assignedTasks Task[]   @relation("assignedTasks")
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(MEMBER)
+  createdAt DateTime @default(now())
+
+  createdTasks  Task[] @relation("CreatedTasks")
+  assignedTasks Task[] @relation("AssignedTasks")
 }
+
+// =====================
+// TASK MODEL
+// =====================
 
 model Task {
   id           String   @id @default(uuid())
@@ -44,8 +61,8 @@ model Task {
   creatorId    String
   assignedToId String
 
-  creator      User @relation("createdTasks", fields: [creatorId], references: [id])
-  assignedTo   User @relation("assignedTasks", fields: [assignedToId], references: [id])
+  creator      User @relation("CreatedTasks", fields: [creatorId], references: [id])
+  assignedTo   User @relation("AssignedTasks", fields: [assignedToId], references: [id])
 
   createdAt    DateTime @default(now())
 }
