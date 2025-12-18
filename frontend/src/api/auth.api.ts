@@ -1,10 +1,32 @@
 import { api } from "./axios";
 
-export const registerUser = (data: any) =>
-  api.post("/auth/register", data);
+/* =====================
+   AUTH APIs
+===================== */
 
-export const loginUser = (data: any) =>
-  api.post("/auth/login", data);
+// Register
+export const registerUser = (data: {
+  name: string;
+  email: string;
+  password: string;
+}) => {
+  return api.post("/auth/register", data);
+};
 
-export const getMe = () =>
-  api.get("/auth/me");
+// Login
+export const loginUser = (data: {
+  email: string;
+  password: string;
+}) => {
+  return api.post("/auth/login", data);
+};
+
+// Get logged-in user
+export const getMe = () => {
+  return api.get("/auth/me");
+};
+
+// ✅ Logout (STEP 4)
+export const logoutUser = () => {
+  return api.post("/auth/logout");
+};

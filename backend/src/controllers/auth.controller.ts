@@ -28,6 +28,16 @@ export const login = async (req: Request, res: Response) => {
   res.json(user);
 };
 
+export const logout = async (_req: Request, res: Response) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+  });
+
+  res.json({ message: "Logged out successfully" });
+};
+
 export const me = async (req: any, res: Response) => {
   res.json(req.user);
 };

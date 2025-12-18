@@ -1,28 +1,34 @@
 import { prisma } from "../config/prisma";
+import { getIO } from "../socket";
 
 export const taskService = {
   /* =====================
      CREATE TASK
   ===================== */
   createTask: async (payload: any, creatorId: string) => {
-    return prisma.task.create({
+    const task = await prisma.task.create({
       data: {
         title: payload.title,
         description: payload.description,
-        dueDate: new Date(payload.dueDate), // ✅ convert
+        dueDate: new Date(payload.dueDate),
         priority: payload.priority,
-        status: "TODO", // ✅ default
+        status: "TODO",
         creatorId,
         assignedToId: payload.assignedToId ?? creatorId,
       },
     });
+
+    // 🔴 REAL-TIME EVENT
+    getIO().emit("task:created", task);
+
+    return task;
   },
 
   /* =====================
      UPDATE TASK
   ===================== */
   updateTask: async (taskId: string, payload: any) => {
-    return prisma.task.update({
+    const task = await prisma.task.update({
       where: { id: taskId },
       data: {
         ...(payload.status && { status: payload.status }),
@@ -32,6 +38,11 @@ export const taskService = {
         }),
       },
     });
+
+    // 🔴 REAL-TIME EVENT
+    getIO().emit("task:updated", task);
+
+    return task;
   },
 
   /* =====================
@@ -50,9 +61,14 @@ export const taskService = {
       throw new Error("You are not allowed to delete this task");
     }
 
-    return prisma.task.delete({
+    await prisma.task.delete({
       where: { id: taskId },
     });
+
+    // 🔴 REAL-TIME EVENT
+    getIO().emit("task:deleted", taskId);
+
+    return { success: true };
   },
 
   /* =====================

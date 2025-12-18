@@ -3,6 +3,7 @@ import taskApi from "../api/task.api";
 import userApi from "../api/user.api";
 import CreateTaskModal from "../components/CreateTaskModal";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
+import { socket } from "../socket";
 
 /* =====================
    TYPES
@@ -23,6 +24,23 @@ type Task = {
 };
 
 /* =====================
+   UI HELPERS
+===================== */
+const statusColor: Record<Task["status"], string> = {
+  TODO: "bg-gray-200 text-gray-700",
+  IN_PROGRESS: "bg-blue-100 text-blue-700",
+  REVIEW: "bg-yellow-100 text-yellow-700",
+  COMPLETED: "bg-green-100 text-green-700",
+};
+
+const priorityColor: Record<Task["priority"], string> = {
+  LOW: "text-gray-500",
+  MEDIUM: "text-indigo-600",
+  HIGH: "text-orange-600",
+  URGENT: "text-red-600 font-semibold",
+};
+
+/* =====================
    DASHBOARD
 ===================== */
 export default function Dashboard() {
@@ -31,8 +49,6 @@ export default function Dashboard() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
-
-  // 🔥 DELETE STATE
   const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
 
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -40,7 +56,7 @@ export default function Dashboard() {
   const [sortOrder, setSortOrder] = useState<"ASC" | "DESC">("ASC");
 
   /* =====================
-     LOAD DATA
+     LOAD TASKS
   ===================== */
   const loadTasks = () => {
     setLoading(true);
@@ -55,9 +71,27 @@ export default function Dashboard() {
       .finally(() => setLoading(false));
   };
 
+  /* =====================
+     INITIAL LOAD
+  ===================== */
   useEffect(() => {
     loadTasks();
     userApi.getUsers().then((res) => setUsers(res.data));
+  }, []);
+
+  /* =====================
+     REAL-TIME SOCKET
+  ===================== */
+  useEffect(() => {
+    socket.on("task:created", loadTasks);
+    socket.on("task:updated", loadTasks);
+    socket.on("task:deleted", loadTasks);
+
+    return () => {
+      socket.off("task:created", loadTasks);
+      socket.off("task:updated", loadTasks);
+      socket.off("task:deleted", loadTasks);
+    };
   }, []);
 
   /* =====================
@@ -96,86 +130,97 @@ export default function Dashboard() {
     return data;
   };
 
-  if (loading) return <p className="p-6">Loading dashboard...</p>;
+  if (loading) {
+    return <p className="p-6 text-slate-600">Loading dashboard...</p>;
+  }
 
   /* =====================
      RENDER
   ===================== */
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">📊 Dashboard</h1>
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200">
+      <div className="max-w-7xl mx-auto p-8">
+        {/* HEADER */}
+        <div className="flex justify-between items-center mb-10">
+          <div>
+            <h1 className="text-4xl font-bold text-slate-800">
+              📊 Task Dashboard
+            </h1>
+            <p className="text-slate-500 mt-1">
+              Real-time collaboration & task tracking
+            </p>
+          </div>
 
-        <button
-          onClick={() => setShowCreate(true)}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg"
-        >
-          + Create Task
-        </button>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="px-5 py-3 rounded-xl bg-indigo-600 text-white font-medium shadow-lg hover:bg-indigo-700 hover:shadow-xl transition"
+          >
+            + Create Task
+          </button>
+        </div>
+
+        {/* FILTERS */}
+        <div className="flex flex-wrap gap-4 mb-10 bg-white/70 backdrop-blur p-4 rounded-xl shadow">
+          <select
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-3 py-2 rounded-lg border bg-white"
+          >
+            <option value="ALL">All Status</option>
+            <option value="TODO">Todo</option>
+            <option value="IN_PROGRESS">In Progress</option>
+            <option value="REVIEW">Review</option>
+            <option value="COMPLETED">Completed</option>
+          </select>
+
+          <select
+            onChange={(e) => setPriorityFilter(e.target.value)}
+            className="px-3 py-2 rounded-lg border bg-white"
+          >
+            <option value="ALL">All Priority</option>
+            <option value="LOW">Low</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="HIGH">High</option>
+            <option value="URGENT">Urgent</option>
+          </select>
+
+          <select
+            onChange={(e) =>
+              setSortOrder(e.target.value as "ASC" | "DESC")
+            }
+            className="px-3 py-2 rounded-lg border bg-white"
+          >
+            <option value="ASC">Due Date ↑</option>
+            <option value="DESC">Due Date ↓</option>
+          </select>
+        </div>
+
+        {/* SECTIONS */}
+        <TaskSection
+          title="⏰ Overdue Tasks"
+          tasks={overdueTasks}
+          users={users}
+          reload={loadTasks}
+          onDelete={setDeleteTaskId}
+        />
+
+        <TaskSection
+          title="📥 Assigned To Me"
+          tasks={filterSort(assignedTasks)}
+          users={users}
+          reload={loadTasks}
+          onDelete={setDeleteTaskId}
+        />
+
+        <TaskSection
+          title="📝 Created By Me"
+          tasks={filterSort(createdTasks)}
+          users={users}
+          reload={loadTasks}
+          onDelete={setDeleteTaskId}
+        />
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-4 mb-6">
-        <select
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="border p-2 rounded"
-        >
-          <option value="ALL">All Status</option>
-          <option value="TODO">Todo</option>
-          <option value="IN_PROGRESS">In Progress</option>
-          <option value="REVIEW">Review</option>
-          <option value="COMPLETED">Completed</option>
-        </select>
-
-        <select
-          onChange={(e) => setPriorityFilter(e.target.value)}
-          className="border p-2 rounded"
-        >
-          <option value="ALL">All Priority</option>
-          <option value="LOW">Low</option>
-          <option value="MEDIUM">Medium</option>
-          <option value="HIGH">High</option>
-          <option value="URGENT">Urgent</option>
-        </select>
-
-        <select
-          onChange={(e) =>
-            setSortOrder(e.target.value as "ASC" | "DESC")
-          }
-          className="border p-2 rounded"
-        >
-          <option value="ASC">Due Date ↑</option>
-          <option value="DESC">Due Date ↓</option>
-        </select>
-      </div>
-
-      {/* Sections */}
-      <Section
-        title="⏰ Overdue Tasks"
-        tasks={overdueTasks}
-        users={users}
-        reload={loadTasks}
-        onDelete={setDeleteTaskId}
-      />
-
-      <Section
-        title="📥 Assigned To Me"
-        tasks={filterSort(assignedTasks)}
-        users={users}
-        reload={loadTasks}
-        onDelete={setDeleteTaskId}
-      />
-
-      <Section
-        title="📝 Created By Me"
-        tasks={filterSort(createdTasks)}
-        users={users}
-        reload={loadTasks}
-        onDelete={setDeleteTaskId}
-      />
-
-      {/* Create Modal */}
+      {/* MODALS */}
       {showCreate && (
         <CreateTaskModal
           onClose={() => setShowCreate(false)}
@@ -183,7 +228,6 @@ export default function Dashboard() {
         />
       )}
 
-      {/* DELETE CONFIRM MODAL */}
       {deleteTaskId && (
         <DeleteConfirmModal
           onCancel={() => setDeleteTaskId(null)}
@@ -202,7 +246,7 @@ export default function Dashboard() {
 /* =====================
    TASK SECTION
 ===================== */
-function Section({
+function TaskSection({
   title,
   tasks,
   users,
@@ -216,25 +260,28 @@ function Section({
   onDelete: (id: string) => void;
 }) {
   return (
-    <div className="mb-10">
-      <h2 className="text-xl font-semibold mb-3">{title}</h2>
+    <div className="mb-14">
+      <h2 className="text-2xl font-semibold text-slate-700 mb-5">
+        {title}
+      </h2>
 
       {tasks.length === 0 ? (
-        <p className="text-gray-500">No tasks</p>
+        <p className="text-slate-500">No tasks</p>
       ) : (
-        <div className="grid gap-3">
+        <div className="grid gap-5">
           {tasks.map((t) => (
             <div
               key={t.id}
-              className="bg-white p-4 rounded shadow flex justify-between"
+              className="bg-white rounded-2xl p-6 shadow hover:shadow-xl transition flex justify-between"
             >
               <div>
-                <h3 className="font-medium">{t.title}</h3>
-                <p className="text-sm text-gray-500">
+                <h3 className="text-lg font-semibold text-slate-800">
+                  {t.title}
+                </h3>
+                <p className="text-sm text-slate-500 mt-1">
                   Due: {new Date(t.dueDate).toDateString()}
                 </p>
 
-                {/* Assign User */}
                 <select
                   value={t.assignedToId}
                   onChange={(e) =>
@@ -244,7 +291,7 @@ function Section({
                       })
                       .then(reload)
                   }
-                  className="mt-2 border px-2 py-1 rounded text-sm"
+                  className="mt-3 px-3 py-1 rounded-lg border text-sm bg-slate-50"
                 >
                   {users.map((u) => (
                     <option key={u.id} value={u.id}>
@@ -254,8 +301,7 @@ function Section({
                 </select>
               </div>
 
-              <div className="text-right text-sm space-y-2">
-                {/* Status */}
+              <div className="flex flex-col items-end gap-2">
                 <select
                   value={t.status}
                   onChange={(e) =>
@@ -265,7 +311,9 @@ function Section({
                       })
                       .then(reload)
                   }
-                  className="border px-2 py-1 rounded"
+                  className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    statusColor[t.status]
+                  }`}
                 >
                   <option value="TODO">Todo</option>
                   <option value="IN_PROGRESS">In Progress</option>
@@ -273,12 +321,13 @@ function Section({
                   <option value="COMPLETED">Completed</option>
                 </select>
 
-                <div className="font-semibold">{t.priority}</div>
+                <span className={`text-sm ${priorityColor[t.priority]}`}>
+                  {t.priority}
+                </span>
 
-                {/* DELETE BUTTON */}
                 <button
                   onClick={() => onDelete(t.id)}
-                  className="text-red-600 text-xs underline"
+                  className="text-xs text-red-500 hover:text-red-700 underline"
                 >
                   Delete
                 </button>
