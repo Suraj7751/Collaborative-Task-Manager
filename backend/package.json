@@ -10,6 +10,9 @@
     "postinstall": "prisma generate",
     "test": "jest"
   },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "@prisma/client": "^5.10.0",
     "bcryptjs": "^2.4.3",
