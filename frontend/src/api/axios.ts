@@ -1,8 +1,9 @@
 import axios from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL as string;
-
 export const api = axios.create({
-  baseURL: API_URL,
+  baseURL:
+    import.meta.env.MODE === "production"
+      ? "https://collaborative-task-manager-dx7z.onrender.com/api"
+      : "http://localhost:4000/api",
   withCredentials: true,
 });
