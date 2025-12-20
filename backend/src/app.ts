@@ -10,12 +10,14 @@ import { errorHandler } from "./middlewares/error.middleware";
 const app = express();
 
 
-app.use(
-  cors({
-    origin: "http://localhost:5173",
-    credentials: true,
-  })
-);
+app.use(cors({
+  origin: [
+    "http://localhost:5173",
+    "https://collaborative-task-manager-pukb.vercel.app"
+  ],
+  credentials: true,
+}));
+
 
 app.use(express.json());
 app.use(cookieParser());
