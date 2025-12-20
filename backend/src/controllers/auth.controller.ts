@@ -2,14 +2,17 @@ import { Request, Response } from "express";
 import { registerDto, loginDto } from "../dtos/auth.dto";
 import { authService } from "../services/auth.service";
 
+// Detect production (Render)
+const isProd = process.env.NODE_ENV === "production";
+
 export const register = async (req: Request, res: Response) => {
   const payload = registerDto.parse(req.body);
   const { user, token } = await authService.register(payload);
 
   res.cookie("token", token, {
     httpOnly: true,
-    secure: false,     // ✅ localhost
-    sameSite: "lax",   // ✅ localhost
+    secure: isProd,                 // ✅ true on Render
+    sameSite: isProd ? "none" : "lax",
   });
 
   res.status(201).json(user);
@@ -21,8 +24,8 @@ export const login = async (req: Request, res: Response) => {
 
   res.cookie("token", token, {
     httpOnly: true,
-    secure: false,     // ✅ localhost
-    sameSite: "lax",   // ✅ localhost
+    secure: isProd,                 // ✅ true on Render
+    sameSite: isProd ? "none" : "lax",
   });
 
   res.json(user);
@@ -31,8 +34,8 @@ export const login = async (req: Request, res: Response) => {
 export const logout = async (_req: Request, res: Response) => {
   res.clearCookie("token", {
     httpOnly: true,
-    secure: true,
-    sameSite: "none",
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
   });
 
   res.json({ message: "Logged out successfully" });
