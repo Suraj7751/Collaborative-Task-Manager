@@ -7,12 +7,12 @@ export const initSocket = (server: http.Server) => {
   io = new Server(server, {
     cors: {
       origin: [
-        "http://localhost:5173", // local dev
-        "https://collaborative-task-manager-pukb.vercel.app", // Vercel frontend
+        "http://localhost:5173",
+        "https://collaborative-task-manager-pukb.vercel.app",
       ],
       credentials: true,
     },
-    transports: ["websocket"],
+    transports: ["websocket"], // ✅ Render fix
   });
 
   io.on("connection", (socket) => {
