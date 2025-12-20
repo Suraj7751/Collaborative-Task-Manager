@@ -12,12 +12,16 @@ export default function App() {
   /* =====================
      CHECK AUTH ON LOAD
   ===================== */
-  const checkAuth = () => {
+  const checkAuth = async () => {
     setLoading(true);
-    getMe()
-      .then((res) => setUser(res.data))
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false));
+    try {
+      const res = await getMe();
+      setUser(res.data);
+    } catch {
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -37,16 +41,16 @@ export default function App() {
         {/* Top Bar */}
         <div className="flex justify-between items-center p-4 bg-white shadow">
           <div className="font-medium">
-            Logged in as <span className="font-semibold">{user.email}</span>
+            Logged in as{" "}
+            <span className="font-semibold">{user.email}</span>
           </div>
 
           <button
-            onClick={() =>
-              logoutUser().then(() => {
-                setUser(null);
-                setPage("login");
-              })
-            }
+            onClick={async () => {
+              await logoutUser();
+              setUser(null);
+              setPage("login");
+            }}
             className="px-4 py-2 bg-red-600 text-white rounded-lg"
           >
             Logout
@@ -90,9 +94,18 @@ export default function App() {
 
       {/* Auth pages */}
       {page === "register" ? (
-        <Register onSuccess={checkAuth} />
+        <Register
+          onSuccess={() => {
+            setPage("login"); // ✅ optional UX improvement
+            checkAuth();
+          }}
+        />
       ) : (
-        <Login onSuccess={checkAuth} />
+        <Login
+          onSuccess={() => {
+            checkAuth();
+          }}
+        />
       )}
     </div>
   );

@@ -1,13 +1,15 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { api } from "../api/axios";
+import { api } from "../api/axios"
+import { useNavigate } from "react-router-dom";
 
 type Props = {
   onSuccess?: (user: any) => void;
-  onLoginClick?: () => void;
 };
 
-export default function Register({ onSuccess, onLoginClick }: Props) {
+export default function Register({ onSuccess }: Props) {
+  const navigate = useNavigate();
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,14 +29,17 @@ export default function Register({ onSuccess, onLoginClick }: Props) {
     setLoading(true);
 
     try {
-      // ✅ REGISTER
-      await api.post("/auth/register", { name, email, password });
+      // ✅ Register
+      await api.post("/api/auth/register", { name, email, password });
 
-      // ✅ GET CURRENT USER
-      const meRes = await api.get("/auth/me");
+      // ✅ Get user
+      const meRes = await api.get("/api/auth/me");
 
-      setMsg("Registration successful");
       onSuccess?.(meRes.data);
+
+      // ✅ THIS WAS MISSING
+      navigate("/dashboard");
+
     } catch (err: any) {
       setMsg(err?.response?.data?.message || "Registration failed");
     } finally {
@@ -44,53 +49,26 @@ export default function Register({ onSuccess, onLoginClick }: Props) {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600">
-      <motion.div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8"
+      >
         <h2 className="text-3xl font-bold text-center mb-6">Create Account</h2>
 
-        <form onSubmit={submit} className="space-y-5">
-          <input
-            placeholder="Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full h-11 px-4 border rounded-xl"
-          />
+        <form onSubmit={submit} className="space-y-4">
+          <input value={name} onChange={e => setName(e.target.value)} placeholder="Name" className="w-full p-3 border rounded" />
+          <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" className="w-full p-3 border rounded" />
+          <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" className="w-full p-3 border rounded" />
+          <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Confirm Password" className="w-full p-3 border rounded" />
 
-          <input
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full h-11 px-4 border rounded-xl"
-          />
-
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full h-11 px-4 border rounded-xl"
-          />
-
-          <input
-            type="password"
-            placeholder="Confirm Password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full h-11 px-4 border rounded-xl"
-          />
-
-          <button className="w-full h-11 bg-indigo-600 text-white rounded-xl">
+          <button disabled={loading} className="w-full bg-indigo-600 text-white py-3 rounded">
             {loading ? "Registering..." : "Register"}
           </button>
         </form>
 
-        {msg && <p className="mt-4 text-center">{msg}</p>}
-
-        <p className="mt-6 text-center">
-          Already have an account?{" "}
-          <span onClick={onLoginClick} className="text-indigo-600 cursor-pointer">
-            Login
-          </span>
-        </p>
+        {msg && <p className="text-center mt-4 text-red-600">{msg}</p>}
       </motion.div>
     </div>
   );
