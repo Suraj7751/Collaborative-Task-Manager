@@ -2,9 +2,13 @@ import React, { useState } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
 
+
 type Props = {
   onSuccess?: (user: any) => void;
 };
+
+// ✅ Backend URL from Vercel / .env
+const API_URL = import.meta.env.VITE_API_URL;
 
 export default function Login({ onSuccess }: Props) {
   const [email, setEmail] = useState("");
@@ -20,20 +24,20 @@ export default function Login({ onSuccess }: Props) {
     try {
       // 1️⃣ Login
       await axios.post(
-        "http://localhost:4000/api/auth/login",
+        `${API_URL}/api/auth/login`,
         { email, password },
         { withCredentials: true }
       );
 
       // 2️⃣ Fetch logged-in user
       const meRes = await axios.get(
-        "http://localhost:4000/api/auth/me",
+        `${API_URL}/api/auth/me`,
         { withCredentials: true }
       );
 
       setMsg("Login successful");
 
-      // 3️⃣ Tell App: user is logged in
+      // 3️⃣ Notify parent
       onSuccess?.(meRes.data);
 
     } catch (err) {
@@ -83,7 +87,7 @@ export default function Login({ onSuccess }: Props) {
           </button>
         </form>
 
-        {msg && <p className="mt-4 text-center">{msg}</p>}
+        {msg && <p className="mt-4 text-center text-red-500">{msg}</p>}
       </motion.div>
     </div>
   );

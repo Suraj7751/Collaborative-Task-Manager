@@ -7,6 +7,9 @@ type Props = {
   onLoginClick?: () => void;
 };
 
+// ✅ API URL from env (Vercel / local both)
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function Register({ onSuccess, onLoginClick }: Props) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -29,14 +32,14 @@ export default function Register({ onSuccess, onLoginClick }: Props) {
     try {
       // 1️⃣ Register user
       await axios.post(
-        "http://localhost:4000/api/auth/register",
+        `${API_URL}/api/auth/register`,
         { name, email, password },
         { withCredentials: true }
       );
 
       // 2️⃣ Fetch logged-in user
       const meRes = await axios.get(
-        "http://localhost:4000/api/auth/me",
+        `${API_URL}/api/auth/me`,
         { withCredentials: true }
       );
 
@@ -44,6 +47,7 @@ export default function Register({ onSuccess, onLoginClick }: Props) {
 
       // 3️⃣ Tell App user is logged in
       onSuccess?.(meRes.data);
+
     } catch (err: any) {
       setMsg(
         err?.response?.data?.message ||
