@@ -11,7 +11,7 @@ export const register = async (req: Request, res: Response) => {
   res.cookie("token", token, {
     httpOnly: true,
     secure: isProd,                 // ✅ true on Render
-    sameSite: isProd ? "none" : "lax",
+    sameSite: isProd ? "none" : "lax", // ✅ REQUIRED for Vercel → Render
   });
 
   res.status(201).json(user);
@@ -23,7 +23,7 @@ export const login = async (req: Request, res: Response) => {
 
   res.cookie("token", token, {
     httpOnly: true,
-    secure: isProd,                 // ✅ REQUIRED
+    secure: isProd,
     sameSite: isProd ? "none" : "lax",
   });
 
@@ -33,8 +33,8 @@ export const login = async (req: Request, res: Response) => {
 export const logout = async (_req: Request, res: Response) => {
   res.clearCookie("token", {
     httpOnly: true,
-    secure: true,
-    sameSite: "none",
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
   });
 
   res.json({ message: "Logged out successfully" });
