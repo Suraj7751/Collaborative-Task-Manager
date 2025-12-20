@@ -10,7 +10,7 @@
     "test": "jest"
   },
   "engines": {
-    "node": ">=18"
+    "node": "18.x"
   },
   "dependencies": {
     "@prisma/client": "^5.10.0",
